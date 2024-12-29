@@ -46,6 +46,7 @@ public:
     bool isFloat();
     std::string toString() override;
     Type* getElType() override;
+    ~TypeBasic() override;
 };
 
 extern std::map<char, TypeBasic*> basicTypes;
@@ -60,6 +61,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypePointer() override;
 };
 
 class TypeArray : public Type {
@@ -73,6 +75,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeArray() override;
 };
 
 class TypeAlias : public Type {
@@ -83,6 +86,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeAlias() override;
 };
 
 class TypeVoid : public Type {
@@ -93,6 +97,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeVoid() override;
 };
 
 class TypeConst : public Type {
@@ -105,6 +110,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeConst() override;
 };
 
 class TypeStruct : public Type {
@@ -122,6 +128,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeStruct() override;
 };
 
 class TypeTemplateMember : public Type {
@@ -135,6 +142,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeTemplateMember() override;
 };
 
 class TypeTemplateMemberDefinition : public Type {
@@ -148,6 +156,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeTemplateMemberDefinition() override;
 };
 
 class TypeFuncArg : public Type {
@@ -161,6 +170,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeFuncArg() override;
 };
 
 class TypeFunc : public Type {
@@ -175,6 +185,7 @@ public:
     std::string toString() override;
     Type* check(Type* parent) override;
     Type* getElType() override;
+    ~TypeFunc() override;
 };
 
 class TypeBuiltin : public Type {
@@ -189,6 +200,7 @@ public:
     std::string toString() override;
     Type* check(Type* parent) override;
     Type* getElType() override;
+    ~TypeBuiltin() override;
 };
 
 class TypeCall : public Type {
@@ -202,6 +214,7 @@ public:
     int getSize() override;
     Type* check(Type* parent) override;
     Type* getElType() override;
+    ~TypeCall() override;
 };
 
 class TypeAuto : public Type {
@@ -212,6 +225,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeAuto() override;
 };
 
 class TypeLLVM : public Type {
@@ -223,6 +237,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeLLVM() override;
 };
 
 class TypeVector : public Type {
@@ -236,6 +251,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+    ~TypeVector() override;
 };
 
 class TypeDivided : public Type {
@@ -249,6 +265,7 @@ public:
     int getSize() override;
     std::string toString() override;
     Type* getElType() override;
+	~TypeDivided() override;
 };
 
 Type* getType(std::string id);

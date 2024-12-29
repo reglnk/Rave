@@ -14,10 +14,36 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "../include/parser/nodes/NodeFloat.hpp"
 #include <iostream>
 
+#include <unordered_map>
+#include <cassert>
+
+struct stez {
+	int live = 0;
+};
+
+std::unordered_map<size_t, stez> type_lifetimes;
+
+#define kons do { \
+	std::cout << __FILE__ << "; " << __LINE__ << ": " << (size_t)this << " constructed" << std::endl; \
+	type_lifetimes[(size_t)this].live++; \
+} while (0)
+#define deko do { \
+	std::cout << __FILE__ << "; " << __LINE__ << ": " << (size_t)this << " destructed" << std::endl; \
+	type_lifetimes[(size_t)this].live--; \
+} while (0)
+
 // Type
+
+Type::~Type() {
+	std::cout << __FILE__ << "; " << __LINE__ << ": " << (size_t)this << " destructed as generic type" << std::endl;
+	type_lifetimes[(size_t)this].live--;
+	// if (type_lifetimes[(size_t)this].live != 0)
+	// 	throw this;
+}
 
 // TypeBasic
 TypeBasic::TypeBasic(char ty) {
+	kons;
     this->type = ty;
 }
 
@@ -57,10 +83,15 @@ std::string TypeBasic::toString() {
 Type* TypeBasic::check(Type* parent) {return nullptr;}
 Type* TypeBasic::getElType() {return this;}
 
+TypeBasic::~TypeBasic() {
+	deko;
+}
+
 std::map<char, TypeBasic*> basicTypes;
 
 // TypePointer
 TypePointer::TypePointer(Type* instance) {
+	kons;
     this->instance = instance;
 }
 
@@ -80,8 +111,13 @@ Type* TypePointer::getElType() {
     return instanceof<TypeVoid>(instance) ? new TypeBasic(BasicType::Char) : instance;
 }
 
+TypePointer::~TypePointer() {
+	deko;
+}
+
 // TypeArray
 TypeArray::TypeArray(Node* count, Type* element) {
+	kons;
     this->count = count;
     this->element = element;
 }
@@ -99,36 +135,54 @@ int TypeArray::getSize() {return ((NodeInt*)this->count->comptime())->value.to_i
 std::string TypeArray::toString() {return this->element->toString() + "[" + std::to_string(((NodeInt*)this->count->comptime())->value.to_int()) + "]";}
 Type* TypeArray::getElType() {return element;}
 
+TypeArray::~TypeArray() {
+	deko;
+}
+
 // TypeAlias
-TypeAlias::TypeAlias() {}
+TypeAlias::TypeAlias() {kons;}
 Type* TypeAlias::copy() {return new TypeAlias();}
 std::string TypeAlias::toString() {return "alias";}
 Type* TypeAlias::check(Type* parent) {return nullptr;}
 int TypeAlias::getSize() {return 0;}
 Type* TypeAlias::getElType() {return this;}
 
+TypeAlias::~TypeAlias() {
+	deko;
+}
+
 // TypeVoid
-TypeVoid::TypeVoid() {}
+TypeVoid::TypeVoid() {kons;}
 Type* TypeVoid::check(Type* parent) {return nullptr;}
 Type* TypeVoid::copy() {return new TypeVoid();}
 int TypeVoid::getSize() {return 0;}
 std::string TypeVoid::toString() {return "void";}
 Type* TypeVoid::getElType() {return this;}
 
+TypeVoid::~TypeVoid() {
+	deko;
+}
+
 // TypeConst
-TypeConst::TypeConst(Type* instance) {this->instance = instance;}
+TypeConst::TypeConst(Type* instance) {kons; this->instance = instance;}
 Type* TypeConst::copy() {return new TypeConst(this->instance->copy());}
 Type* TypeConst::check(Type* parent) {this->instance->check(nullptr); return nullptr;}
 int TypeConst::getSize() {return this->instance->getSize();}
 std::string TypeConst::toString() {return this->instance->toString();}
 Type* TypeConst::getElType() {return this->instance->getElType();}
 
+TypeConst::~TypeConst() {
+	deko;
+}
+
 // TypeStruct
 TypeStruct::TypeStruct(std::string name) {
+	kons;
     this->name = name;
 }
 
 TypeStruct::TypeStruct(std::string name, std::vector<Type*> types) {
+	kons;
     this->name = name;
     this->types = types;
 }
@@ -250,8 +304,13 @@ Type* TypeStruct::check(Type* parent) {
 std::string TypeStruct::toString() {return this->name;}
 Type* TypeStruct::getElType() {return this;}
 
+TypeStruct::~TypeStruct() {
+	deko;
+}
+
 // TypeTemplateMember
 TypeTemplateMember::TypeTemplateMember(Type* type, Node* value) {
+	kons;
     this->type = type;
     this->value = value;
 }
@@ -267,8 +326,13 @@ std::string TypeTemplateMember::toString() {
 int TypeTemplateMember::getSize() {return this->type->getSize();}
 Type* TypeTemplateMember::getElType() {return this->type->getElType();}
 
+TypeTemplateMember::~TypeTemplateMember() {
+	deko;
+}
+
 // TypeTemplateMemberDefinition
 TypeTemplateMemberDefinition::TypeTemplateMemberDefinition(Type* type, std::string name) {
+	kons;
     this->type = type;
     this->name = name;
 }
@@ -279,8 +343,13 @@ std::string TypeTemplateMemberDefinition::toString() {return this->name;}
 int TypeTemplateMemberDefinition::getSize() {return this->type->getSize();}
 Type* TypeTemplateMemberDefinition::getElType() {return this->type->getElType();}
 
+TypeTemplateMemberDefinition::~TypeTemplateMemberDefinition() {
+	deko;
+}
+
 // TypeFuncArg
 TypeFuncArg::TypeFuncArg(Type* type, std::string name) {
+	kons;
     this->type = type;
     this->name = name;
 }
@@ -291,8 +360,13 @@ std::string TypeFuncArg::toString() {return this->name;}
 int TypeFuncArg::getSize() {return this->type->getSize();}
 Type* TypeFuncArg::getElType() {return this->type->getElType();}
 
+TypeFuncArg::~TypeFuncArg() {
+	deko;
+}
+
 // TypeFunc
 TypeFunc::TypeFunc(Type* main, std::vector<TypeFuncArg*> args, bool isVarArg) {
+	kons;
     this->main = main;
     this->args = args;
     this->isVarArg = isVarArg;
@@ -311,8 +385,13 @@ std::string TypeFunc::toString() {return "NotImplemented";}
 Type* TypeFunc::check(Type* parent) {return nullptr;}
 Type* TypeFunc::getElType() {return this;}
 
+TypeFunc::~TypeFunc() {
+	deko;
+}
+
 // TypeBuiltin
 TypeBuiltin::TypeBuiltin(std::string name, std::vector<Node*> args, NodeBlock* block) {
+	kons;
     this->name = name;
     this->args = args;
     this->block = block;
@@ -324,8 +403,13 @@ std::string TypeBuiltin::toString() {return this->name;}
 Type* TypeBuiltin::check(Type* parent) {return nullptr;}
 Type* TypeBuiltin::getElType() {return this;}
 
+TypeBuiltin::~TypeBuiltin() {
+	deko;
+}
+
 // TypeCall
 TypeCall::TypeCall(std::string name, std::vector<Node*> args) {
+	kons;
     this->name = name;
     this->args = args;
 }
@@ -336,32 +420,48 @@ int TypeCall::getSize() {return 0;}
 Type* TypeCall::check(Type* parent) {return nullptr;}
 Type* TypeCall::getElType() {return this;}
 
+TypeCall::~TypeCall() {
+	deko;
+}
+
 // TypeAuto
-TypeAuto::TypeAuto() {}
+TypeAuto::TypeAuto() {kons;}
 Type* TypeAuto::copy() {return new TypeAuto();}
 int TypeAuto::getSize() {return 0;}
 Type* TypeAuto::check(Type* parent) {return nullptr;}
 std::string TypeAuto::toString() {return "";}
 Type* TypeAuto::getElType() {return this;}
 
+TypeAuto::~TypeAuto() {
+	deko;
+}
+
 // TypeLLVM
-TypeLLVM::TypeLLVM(LLVMTypeRef tr) {this->tr = tr;}
+TypeLLVM::TypeLLVM(LLVMTypeRef tr) {kons; this->tr = tr;}
 Type* TypeLLVM::copy() {return new TypeLLVM(this->tr);}
 int TypeLLVM::getSize() {return 0;}
 Type* TypeLLVM::check(Type* parent) {return nullptr;}
 std::string TypeLLVM::toString() {return "";}
 Type* TypeLLVM::getElType() {return this;}
 
+TypeLLVM::~TypeLLVM() {
+	deko;
+}
+
 // TypeVector
-TypeVector::TypeVector(Type* mainType, int count) {this->mainType = mainType; this->count = count;}
+TypeVector::TypeVector(Type* mainType, int count) {kons; this->mainType = mainType; this->count = count;}
 Type* TypeVector::copy() {return new TypeVector(mainType, count);}
 int TypeVector::getSize() {return mainType->getSize() * count;}
 Type* TypeVector::check(Type* parent) {return nullptr;}
 std::string TypeVector::toString() {return "<" + mainType->toString() + " x " + std::to_string(count) + ">";}
 Type* TypeVector::getElType() {return mainType;}
 
+TypeVector::~TypeVector() {
+	deko;
+}
+
 // TypeDivided
-TypeDivided::TypeDivided(Type* mainType, std::vector<Type*> divided) {this->mainType = mainType; this->divided = divided;}
+TypeDivided::TypeDivided(Type* mainType, std::vector<Type*> divided) {kons; this->mainType = mainType; this->divided = divided;}
 Type* TypeDivided::copy() {return new TypeDivided(mainType, divided);}
 
 int TypeDivided::getSize() {
@@ -377,6 +477,10 @@ std::string TypeDivided::toString() {
 }
 
 Type* TypeDivided::getElType() {return this;}
+
+TypeDivided::~TypeDivided() {
+	deko;
+}
 
 TypeVoid* typeVoid;
 

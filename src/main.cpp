@@ -11,12 +11,22 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "./include/parser/parser.hpp"
 #include "./include/compiler.hpp"
 
+#include <unordered_map>
+
+struct stez {
+	int live = 0;
+};
+
+extern std::unordered_map<size_t, stez> type_lifetimes;
+
 std::string outFile = "";
 std::string outType = "";
 std::vector<std::string> files;
 genSettings options;
 std::string exePath;
 bool helpCalled = false;
+
+extern
 
 // Analyzing command-line arguments.
 genSettings analyzeArguments(std::vector<std::string>& arguments) {
@@ -128,5 +138,11 @@ int main(int argc, char** argv) {
 
     Compiler::initialize(outFile, outType, options, files);
     Compiler::compileAll();
+
+    for (auto &tp: type_lifetimes) {
+		if (tp.second.live) {
+			std::cout << "Object " << (size_t)tp.first << " has live " << tp.second.live << std::endl;
+		}
+	}
     return 0;
 }
