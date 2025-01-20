@@ -91,6 +91,8 @@ void Compiler::initialize(std::string outFile, std::string outType, genSettings 
     Compiler::outType = outType;
     Compiler::settings = settings;
     Compiler::files = files;
+
+    std::cout << "exepath: " << exePath << '\n';
     
     if(access((exePath + "options.json").c_str(), 0) == 0) {
         // If file exists - read it
@@ -232,7 +234,7 @@ void Compiler::clearAll() {
     currScope = nullptr;
 }
 
-void Compiler::compile(std::string file) {
+void Compiler::compile(std::string file, std::string output = "") {
     std::ifstream fContent(file);
     std::string content = "";
 
@@ -327,7 +329,7 @@ void Compiler::compile(std::string file) {
               + (Compiler::settings.noPrelude || file.find("std/prelude.rave") != std::string::npos || file.find("std/memory.rave") != std::string::npos ? "" : "import <std/prelude> <std/memory>") +
               "\n" + oldContent;
 
-    AST::mainFile = Compiler::files[0];
+    AST::mainFile = Compiler::files[0]; // @todo
 
     auto start = std::chrono::steady_clock::now();
     Lexer* lexer = new Lexer(content, offset);
@@ -502,13 +504,11 @@ void Compiler::compileAll() {
         if(Compiler::toImport[i].size() > 2 && (endsWith(Compiler::toImport[i], ".a") || endsWith(Compiler::toImport[i], ".o") || endsWith(Compiler::toImport[i], ".lib")))
             Compiler::linkString += Compiler::toImport[i] + " ";
         else {
-            #if defined(__linux__)
             if(
-                Compiler::toImport[i].find("Rave/std/") != std::string::npos && !Compiler::settings.recompileStd &&
+                Compiler::toImport[i].find(exePath + "std/") != std::string::npos && !Compiler::settings.recompileStd &&
                 access(std::regex_replace(Compiler::toImport[i], std::regex("\\.rave"), std::string(".") + Compiler::outType+".o").c_str(), 0) != -1
             ) linkString += std::regex_replace(Compiler::toImport[i], std::regex("\\.rave"), std::string(".") + Compiler::outType+".o") + " ";
             else {
-            #endif
                 compile(Compiler::toImport[i]);
                 if(Compiler::settings.emitLLVM) {
                     char* err;
@@ -517,7 +517,7 @@ void Compiler::compileAll() {
                 std::string compiledFile = std::regex_replace(Compiler::toImport[i], std::regex("\\.rave"), ".o");
                 linkString += compiledFile + " ";
                 #if defined(__linux__)
-                if(Compiler::toImport[i].find("Rave/std/") == std::string::npos) toRemove.push_back(compiledFile);
+                if(Compiler::toImport[i].find(exePath + "std/") == std::string::npos) toRemove.push_back(compiledFile);
                 else {
                     std::ifstream src(compiledFile, std::ios::binary);
                     std::ofstream dst(std::regex_replace(compiledFile, std::regex("\\.o"), std::string(".") + Compiler::outType + ".o"));
@@ -527,9 +527,7 @@ void Compiler::compileAll() {
                 #else
                 toRemove.push_back(compiledFile);
                 #endif
-            #if defined(__linux__)
             }
-            #endif
         }
     }
 
