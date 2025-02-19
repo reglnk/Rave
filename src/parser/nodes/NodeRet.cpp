@@ -16,7 +16,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "../../include/parser/nodes/NodeVar.hpp"
 
 namespace AST {
-    extern std::map<std::string, NodeFunc*> funcTable;
+    extern std::unordered_map<std::string, NodeFunc*> funcTable;
 }
 
 NodeRet::NodeRet(Node* value, int loc) {

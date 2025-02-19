@@ -24,17 +24,17 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "../include/llvm.hpp"
 #include "../include/utils.hpp"
 
-std::map<std::string, Type*> AST::aliasTypes;
-std::map<std::string, Node*> AST::aliasTable;
-std::map<std::string, NodeVar*> AST::varTable;
-std::map<std::string, NodeFunc*> AST::funcTable;
-std::map<std::string, NodeLambda*> AST::lambdaTable;
-std::map<std::string, NodeStruct*> AST::structTable;
+std::unordered_map<std::string, Type*> AST::aliasTypes;
+std::unordered_map<std::string, Node*> AST::aliasTable;
+std::unordered_map<std::string, NodeVar*> AST::varTable;
+std::unordered_map<std::string, NodeFunc*> AST::funcTable;
+std::unordered_map<std::string, NodeLambda*> AST::lambdaTable;
+std::unordered_map<std::string, NodeStruct*> AST::structTable;
 std::map<std::pair<std::string, std::string>, NodeFunc*> AST::methodTable;
 std::map<std::pair<std::string, std::string>, StructMember> AST::structsNumbers;
 std::vector<std::string> AST::importedFiles;
-std::map<std::string, std::vector<Node*>> AST::parsed;
-std::map<int, Node*> AST::condStack;
+std::unordered_map<std::string, std::vector<Node*>> AST::parsed;
+std::unordered_map<int, Node*> AST::condStack;
 std::string AST::mainFile;
 std::vector<std::string> AST::addToImport;
 bool AST::debugMode;
@@ -396,13 +396,13 @@ int LLVMGen::getAlignment(Type* type) {
 
 // Scope
 
-Scope::Scope(std::string funcName, std::map<std::string, int> args, std::map<std::string, NodeVar*> argVars) {
+Scope::Scope(std::string funcName, std::unordered_map<std::string, int> args, std::unordered_map<std::string, NodeVar*> argVars) {
     this->funcName = funcName;
-    this->args = std::map<std::string, int>(args);
-    this->argVars = std::map<std::string, NodeVar*>(argVars);
-    this->aliasTable = std::map<std::string, Node*>();
-    this->localScope = std::map<std::string, RaveValue>();
-    this->localVars = std::map<std::string, NodeVar*>();
+    this->args = std::unordered_map<std::string, int>(args);
+    this->argVars = std::unordered_map<std::string, NodeVar*>(argVars);
+    this->aliasTable = std::unordered_map<std::string, Node*>();
+    this->localScope = std::unordered_map<std::string, RaveValue>();
+    this->localVars = std::unordered_map<std::string, NodeVar*>();
 }
 
 void Scope::remove(std::string name) {

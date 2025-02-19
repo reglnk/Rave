@@ -27,6 +27,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #include "../json.hpp"
 #include "../llvm.hpp"
 #include <vector>
+#include <unordered_map>
 
 class NodeVar;
 class NodeFunc;
@@ -48,18 +49,18 @@ struct FuncArgSet {
 };
 
 namespace AST {
-    extern std::map<std::string, Type*> aliasTypes;
-    extern std::map<std::string, Node*> aliasTable;
-    extern std::map<std::string, NodeVar*> varTable;
-    extern std::map<std::string, NodeFunc*> funcTable;
-    extern std::map<std::string, NodeStruct*> structTable;
-    extern std::map<std::string, NodeLambda*> lambdaTable;
+    extern std::unordered_map<std::string, Type*> aliasTypes;
+    extern std::unordered_map<std::string, Node*> aliasTable;
+    extern std::unordered_map<std::string, NodeVar*> varTable;
+    extern std::unordered_map<std::string, NodeFunc*> funcTable;
+    extern std::unordered_map<std::string, NodeStruct*> structTable;
+    extern std::unordered_map<std::string, NodeLambda*> lambdaTable;
     extern std::map<std::pair<std::string, std::string>, NodeFunc*> methodTable;
     extern std::map<std::pair<std::string, std::string>, StructMember> structsNumbers;
     extern std::vector<std::string> importedFiles;
     extern std::vector<std::string> addToImport;
-    extern std::map<std::string, std::vector<Node*>> parsed;
-    extern std::map<int, Node*> condStack;
+    extern std::unordered_map<std::string, std::vector<Node*>> parsed;
+    extern std::unordered_map<int, Node*> condStack;
     extern std::string mainFile;
     extern bool debugMode;
 
@@ -113,19 +114,19 @@ public:
 
 class Scope {
 public:
-    std::map<std::string, RaveValue> localScope;
-    std::map<std::string, int> args;
+    std::unordered_map<std::string, RaveValue> localScope;
+    std::unordered_map<std::string, int> args;
     std::string funcName;
     LLVMBasicBlockRef blockExit;
     bool funcHasRet = false;
-    std::map<std::string, NodeVar*> localVars;
-    std::map<std::string, NodeVar*> argVars;
-    std::map<std::string, Node*> aliasTable;
+    std::unordered_map<std::string, NodeVar*> localVars;
+    std::unordered_map<std::string, NodeVar*> argVars;
+    std::unordered_map<std::string, Node*> aliasTable;
     LLVMBasicBlockRef fnEnd;
     LLVMBasicBlockRef elseIfEnd = nullptr;
     bool detectMemoryLeaks = false;
 
-    Scope(std::string funcName, std::map<std::string, int> args, std::map<std::string, NodeVar*> argVars);
+    Scope(std::string funcName, std::unordered_map<std::string, int> args, std::unordered_map<std::string, NodeVar*> argVars);
 
     RaveValue get(std::string name, int loc = -1);
     RaveValue getWithoutLoad(std::string name, int loc = -1);

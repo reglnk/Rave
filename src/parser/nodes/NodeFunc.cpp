@@ -385,8 +385,8 @@ RaveValue NodeFunc::generate() {
         LLVMPositionBuilderAtEnd(generator->builder, entry);
         if(!Compiler::settings.noFastMath) LLVM::setFastMath(generator->builder, true, false, true, true);
 
-        std::map<std::string, int> indexes;
-        std::map<std::string, NodeVar*> vars;
+        std::unordered_map<std::string, int> indexes;
+        std::unordered_map<std::string, NodeVar*> vars;
         for(int i=0; i<this->args.size(); i++) {
             indexes.insert({this->args[i].name, i});
             vars.insert({this->args[i].name, new NodeVar(this->args[i].name, nullptr, false, true, false, {}, this->loc, this->args[i].type)});
