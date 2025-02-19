@@ -26,6 +26,8 @@ genSettings analyzeArguments(std::vector<std::string>& arguments) {
     genSettings settings;
     for(int i=0; i<arguments.size(); i++) {
         if(arguments[i] == "-o" || arguments[i] == "--out") {outFile = arguments[i + 1]; i += 1;} // Output file
+        else if(arguments[i] == "-relcwd") settings.cwdRelative = true;
+        else if(arguments[i] == "-relfile") settings.cwdRelative = false;
         else if(arguments[i] == "-np" || arguments[i] == "--noPrelude") settings.noPrelude = true; // Disables importing of std/prelude
         else if(arguments[i] == "-eml" || arguments[i] == "--emitLLVM" || arguments[i] == "-emit-llvm") settings.emitLLVM = true; // Enables output of .ll files
         else if(arguments[i] == "-l" || arguments[i] == "--link") {settings.linkParams += "-l" + arguments[i + 1] + " "; i += 1;} // Adds library to the linker

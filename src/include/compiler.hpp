@@ -18,6 +18,7 @@ namespace Compiler {
     extern double lexTime;
     extern double parseTime;
     extern double genTime;
+	extern double llvmGenTime;
     extern std::vector<std::string> files;
     extern std::vector<std::string> toImport;
     extern bool debugMode;

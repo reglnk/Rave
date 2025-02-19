@@ -54,6 +54,7 @@ nlohmann::json Compiler::options;
 double Compiler::lexTime = 0.0;
 double Compiler::parseTime = 0.0;
 double Compiler::genTime = 0.0;
+double Compiler::llvmGenTime = 0.0;
 std::vector<std::string> Compiler::files;
 std::vector<std::string> Compiler::toImport;
 bool Compiler::debugMode;
@@ -338,9 +339,9 @@ void Compiler::compile(std::string file) {
     start = end;
     Parser* parser = new Parser(lexer->tokens, file);
     parser->parseAll();
-    end = std::chrono::steady_clock::now();
     for(int i=0; i<parser->nodes.size(); i++) parser->nodes[i]->check();
-    Compiler::parseTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	end = std::chrono::steady_clock::now();
+	Compiler::parseTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     start = end;
     generator = new LLVMGen(file, Compiler::settings, Compiler::options);
@@ -388,6 +389,9 @@ void Compiler::compile(std::string file) {
     LLVMSetDataLayout(generator->lModule, LLVMCopyStringRepOfTargetData(generator->targetData));
 
     for(int i=0; i<parser->nodes.size(); i++) parser->nodes[i]->generate();
+	end = std::chrono::steady_clock::now();
+	Compiler::genTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	start = end;
 
     #if LLVM_VERSION < 17
     LLVMPassManagerRef pm = LLVMCreatePassManager();
@@ -455,8 +459,8 @@ void Compiler::compile(std::string file) {
         Compiler::error("target machine emit to file: " + std::string(errors));
         std::exit(1);
     }
-    end = std::chrono::steady_clock::now();
-    Compiler::genTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	end = std::chrono::steady_clock::now();
+	Compiler::llvmGenTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     for(int i=0; i<AST::importedFiles.size(); i++) {
         if(std::find(Compiler::toImport.begin(), Compiler::toImport.end(), AST::importedFiles[i]) == Compiler::toImport.end()) Compiler::toImport.push_back(AST::importedFiles[i]);
@@ -556,5 +560,10 @@ void Compiler::compileAll() {
 
     for(int i=0; i<toRemove.size(); i++) std::remove(toRemove[i].c_str());
 
-    std::cout << "Time spent by lexer: " << std::to_string(Compiler::lexTime) << "ms\nTime spent by parser: " << std::to_string(Compiler::parseTime) << "ms\nTime spent by generator: " << std::to_string(Compiler::genTime) << "ms" << std::endl;
+    std::cout
+		<< "Time spent by lexer: " << std::to_string(Compiler::lexTime)
+		<< "ms\nTime spent by parser: " << std::to_string(Compiler::parseTime)
+		<< "ms\nTime spent by generator: " << std::to_string(Compiler::genTime)
+		<< "ms\nTime spent by LLVM: " << std::to_string(Compiler::llvmGenTime)
+		<< "ms" << std::endl;
 }
