@@ -16,6 +16,18 @@ ifdef OS
 	endif
 endif
 
+checkLLVM = $(let ver existing, $1 $2, \
+	$(if $(existing) \
+	,	$(existing) \
+	,	$(if $(shell command -v llvm-config-$(ver)) \
+		,	$(ver) llvm-config-$(ver) \
+		,	$(if $(shell command -v llvm-config$(ver)) \
+			,	$(ver) llvm-config$(ver) \
+			) \
+		) \
+	) \
+)
+
 ifeq ($(WINBUILD),1)
 	BIN = rave.exe
 	ifeq (, $(shell command -v $(LLVM_CONFIG)))
@@ -46,12 +58,19 @@ ifeq ($(WINBUILD),1)
 	SRC = $(patsubst ".\\%",$ .\src\\%, $(shell ./getFiles.sh))
 	LLVM_COMPILE_FLAGS = `$(LLVM_CONFIG) --cflags`
 else
-	ifneq (, $(shell command -v llvm-config-16))
- 		LLVM_VERSION = 16
-		LLVM_CONFIG = llvm-config-16
-	else ifneq (, $(shell command -v llvm-config-15))
-		LLVM_VERSION = 15
-		LLVM_CONFIG = llvm-config-15
+	LLVM_VER_CONFIG := $(call checkLLVM, 19, $(LLVM_VER_CONFIG))
+	LLVM_VER_CONFIG := $(call checkLLVM, 18, $(LLVM_VER_CONFIG))
+	LLVM_VER_CONFIG := $(call checkLLVM, 17, $(LLVM_VER_CONFIG))
+	LLVM_VER_CONFIG := $(call checkLLVM, 16, $(LLVM_VER_CONFIG))
+	LLVM_VER_CONFIG := $(call checkLLVM, 15, $(LLVM_VER_CONFIG))
+	LLVM_VER_CONFIG := $(call checkLLVM, 14, $(LLVM_VER_CONFIG))
+
+	LLVM_VER_CONFIG := $(call checkLLVM, 20, $(LLVM_VER_CONFIG))
+	LLVM_VER_CONFIG := $(call checkLLVM, 21, $(LLVM_VER_CONFIG))
+
+	ifneq (, $(LLVM_VER_CONFIG))
+		LLVM_VERSION = $(word 1, $(LLVM_VER_CONFIG))
+		LLVM_CONFIG = $(word 2, $(LLVM_VER_CONFIG))
 	else ifneq (, $(shell command -v llvm-config))
 		LLVM_FULL_VERSION = $(shell llvm-config --version)
 		LLVM_VERSION = $(firstword $(subst ., ,$(LLVM_FULL_VERSION)))
@@ -78,13 +97,13 @@ $(BIN): $(OBJ)
 	$(COMPILER) $(OBJ) -o $@ $(LLVM_FLAGS) -DLLVM_VERSION=$(LLVM_VERSION) -lstdc++fs
 obj/linux/%.o: %.cpp
 	$(shell mkdir -p obj/linux/src/parser/nodes obj/linux/src/lexer)
-	$(COMPILER) -c $< -o $@ -DLLVM_VERSION=$(LLVM_VERSION) -std=c++17 -Wno-deprecated $(FLAGS) $(LLVM_FLAGS) -fexceptions
+	$(COMPILER) -c $< -o $@ -DLLVM_VERSION=$(LLVM_VERSION) -Wno-deprecated $(FLAGS) $(LLVM_FLAGS) -std=c++17 -fexceptions
 else
 $(BIN): $(OBJ)
 	$(COMPILER) $(OBJ) -o $@ $(LLVM_LINK_FLAGS) -DLLVM_VERSION=$(LLVM_VERSION) -lstdc++
 obj/win/%.o: %.cpp
 	$(shell mkdir -p obj/win/src/parser/nodes obj/win/src/lexer)
-	$(COMPILER) -c $< -o $@ -DLLVM_VERSION=$(LLVM_VERSION) -std=c++17 -Wno-deprecated $(FLAGS) $(LLVM_COMPILE_FLAGS) -fexceptions
+	$(COMPILER) -c $< -o $@ -DLLVM_VERSION=$(LLVM_VERSION) -Wno-deprecated $(FLAGS) $(LLVM_COMPILE_FLAGS) -std=c++17 -fexceptions
 endif
 
 clean:
