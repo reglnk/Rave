@@ -112,10 +112,18 @@ Token* Parser::peek() {return this->tokens[this->idx];}
 Token* Parser::next() {this->idx += 1; return this->tokens[this->idx];}
 
 // correctly process multiple variable declarations of single type
-static void addTopLevelNode(std::vector<Node*>& nodes, Node* n) {
+static void dispatchNode(std::vector<Node*>& nodes, Node* n) {
 	NodeVar* stmtVar = dynamic_cast<NodeVar*>(n);
 	if(stmtVar != nullptr) {
-		do {nodes.push_back(stmtVar); stmtVar = stmtVar->next;}
+		do {
+			nodes.push_back(stmtVar);
+			NodeVar* prev = stmtVar;
+			stmtVar = stmtVar->next;
+			
+			// for N variables in multideclaration, we need to copy types for N-1 of them.
+			if(stmtVar == nullptr) break;
+			else prev->type = prev->type->copy();
+		}
 		while(stmtVar != nullptr);
 	}
 	else nodes.push_back(n);
@@ -125,7 +133,7 @@ void Parser::parseAll() {
     while(peek()->type != TokType::Eof) {
         Node* n = this->parseTopLevel();
         if(n == nullptr) break;
-        if(!instanceof<NodeNone>(n)) addTopLevelNode(nodes, n);
+        if(!instanceof<NodeNone>(n)) dispatchNode(nodes, n);
     }
 }
 
@@ -156,7 +164,7 @@ Node* Parser::parseTopLevel(std::string s) {
         NodeBlock* block = new NodeBlock({});
         if(peek()->type == TokType::Rbra) {
             this->next();
-            while(peek()->type != TokType::Lbra) addTopLevelNode(block->nodes, this->parseTopLevel(s));
+            while(peek()->type != TokType::Lbra) dispatchNode(block->nodes, this->parseTopLevel(s));
             this->next();
         }
         NodeBuiltin* nb = new NodeBuiltin(tok->value, args, tok->line, block);
@@ -193,7 +201,7 @@ Node* Parser::parseNamespace(std::string s) {
 
     std::vector<Node*> nNodes;
     Node* currNode = nullptr;
-    while((currNode = this->parseTopLevel(s)) != nullptr) addTopLevelNode(nNodes, currNode);
+    while((currNode = this->parseTopLevel(s)) != nullptr) dispatchNode(nNodes, currNode);
 
     if(peek()->type != TokType::Lbra) this->error("expected token '}'!");
     this->next();
@@ -238,7 +246,7 @@ Node* Parser::parseBuiltin(std::string f) {
             block = new NodeBlock({});
             this->next();
             Node* currNode = nullptr;
-            while((currNode = this->parseTopLevel(f)) != nullptr) addTopLevelNode(block->nodes, currNode);
+            while((currNode = this->parseTopLevel(f)) != nullptr) dispatchNode(block->nodes, currNode);
             this->next();
             isTopLevel = true;
         }
@@ -832,7 +840,7 @@ Node* Parser::parseStruct(std::vector<DeclarMod> mods) {
     
     std::vector<Node*> nodes;
     Node* currNode = nullptr;
-    while((currNode = this->parseTopLevel(name)) != nullptr) addTopLevelNode(nodes, currNode);
+    while((currNode = this->parseTopLevel(name)) != nullptr) dispatchNode(nodes, currNode);
 
     if(peek()->type != TokType::Lbra) this->error("expected token '}'!");
     this->next(); // skip }
@@ -1496,7 +1504,7 @@ Node* Parser::parseAnyLevelBlock(std::string f) {
     NodeBlock* block = new NodeBlock({});
     
     this->next();
-    while(peek()->type != TokType::Lbra) addTopLevelNode(block->nodes, this->parseTopLevel(f));
+    while(peek()->type != TokType::Lbra) dispatchNode(block->nodes, this->parseTopLevel(f));
     this->next();
 
     return block;
@@ -1590,7 +1598,7 @@ NodeBlock* Parser::parseBlock(std::string s) {
     if(peek()->type == TokType::Rbra) this->next();
     while(peek()->type != TokType::Lbra && peek()->type != TokType::Eof) {
         Node* stmt = this->parseStmt(s);
-        addTopLevelNode(nodes, stmt);
+        dispatchNode(nodes, stmt);
         while(peek()->type == TokType::Semicolon) this->next();
     }
     if(peek()->type != TokType::Eof) this->next();
